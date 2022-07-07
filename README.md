@@ -1,5 +1,14 @@
-# rucio-rse-StoRM-webdav
+# Rucio RSE based on StoRM-webdav with Token based Auth
 How to add a Rucio RSE using StoRM and WebDav with tokens based A&amp;A
+
+## Requirements
+
+- VM or Container with CentOS7.
+- 4 GB RAM and 4 CPU cores.
+- 50 GB of SSD.
+
+## Install StoRM Backend, StoRM Frontend and StoRM WebDav with puppet
+
 
 Install wget
 ```
@@ -12,7 +21,7 @@ systemctl enable ntpd
 systemctl start ntpd
 ```
 
-Set-up a hostname and check 
+Set-up a hostname and check if your hostname is working
 
 ```
 hostname -f
@@ -303,6 +312,7 @@ More info about it here: https://github.com/italiangrid/storm-webdav/blob/master
 
 Now is time to edit the following file /etc/storm/webdav/config/application.yml to set-up the credentials A&A.
 
+```
 oauth:
 enable-oidc: true
 issuers:
@@ -329,7 +339,6 @@ storm:
 voms:
     trust-store:
     dir: ${STORM_WEBDAV_VOMS_TRUST_STORE_DIR:/etc/grid-security/certificates}
-
 ```
 
 Restart the StoRM WebDav
@@ -344,10 +353,67 @@ Check the status
 systemctl status storm-webdav
 ```
 
+Check the service logs here:
+
+```
+tail /var/log/storm/webdav/storm-webdav-server.log
+```
+
+Again,  validate the status of the service if logs look good.
+
+curl http://spsr.local:8085/actuator/health
+curl http://spsr.local:8085/status/metrics?pretty=true 
 
 
+## Details of the installation and parameters to connect
+
+By default a storage area named `dteam-disk` is accessible at the URL https://spsrc-local:8443/dteam-disk or, if anonymous access is granted, at http://dteam-disk:8085/dteam-disk
 
 
+## Add a new RSE from RUCIO Admintrator console
 
+Add a deterministic RSE for our SPSRC
+
+```
+rucio-admin rse add SPSRC
+```
+
+Point the RSE to an FTS
+
+```
+rucio-admin rse set-attribute --rse SPSRC --key fts --value https://fts3-pilot.cern.ch:8446
+```
+
+Set Tape field to false since where are not providing Tape storage.
+
+```
+rucio-admin rse set-attribute --rse SPSRC --key istape --value False
+```
+
+Allow the `root` user (unlimited) access
+
+```
+rucio-admin account set-limits root SPSRC "infinity"
+```
+
+Configure one or more protocols
+
+```
+rucio-admin rse add-protocol --hostname spsrc-rucio.iaa.csci.es --scheme https --prefix '....' --port 443 --imp 'rucio.rse.protocols.gfal.Default' --domain-json '{"wan": {"read": 1, "write": 1, "delete": 1, "third_party_copy": 1}, "lan": {"read": 1, "write": 1, "delete": 1}}' SPSRC
+```
+
+If adding more than one, set the TPC priority accordingly. Also, if adding root protocol, the corresponding prefix requires an additional slash (/) at the beginning.
+
+```
+rucio-admin rse add-protocol --hostname spsrc-rucio.iaa.csci.es --scheme gsiftp --prefix '....' --port 2811 --imp 'rucio.rse.protocols.gfal.Default' --domain-json '{"wan": {"read": 1, "write": 1, "delete": 1, "third_party_copy": 2}, "lan": {"read": 1, "write": 1, "delete": 1}}' SPSRC
+```
+
+Add links to other RSEs
+
+```
+rucio-admin rse add-distance SPSRC XXX
+rucio-admin rse add-distance XXX SPSRC
+...
+```
 
 
