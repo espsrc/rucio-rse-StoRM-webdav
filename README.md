@@ -27,7 +27,7 @@ systemctl enable ntpd
 systemctl start ntpd
 ```
 
-Set-up a hostname and check if your hostname is working
+Set-up a hostname and check if your hostname is working. In our case we will use `spsrc.local` a localhost and then it will be put under NGINX.
 
 ```
 hostname -f
