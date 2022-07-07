@@ -422,4 +422,9 @@ rucio-admin rse add-distance XXX SPSRC
 ...
 ```
 
+# References
+- StoRM WebDav: http://italiangrid.github.io/storm/documentation/sysadmin-guide/1.11.21/installation-guides/webdav/storm-webdav-guide/index.html
+- Configure StoRM WebDav Token Auth: https://gitlab.com/ska-telescope/src/ska-rucio-prototype/-/blob/master/notes/setup-storm-webdav-rse.md
+- Add a new RSE from rucio-admin: https://gitlab.com/ska-telescope/src/ska-rucio-prototype/-/tree/master/#add-storage
+- 
 
