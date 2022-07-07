@@ -1,5 +1,5 @@
 # Rucio RSE based on StoRM-webdav with Token based Auth
-How to add a Rucio RSE using StoRM and WebDav with tokens based A&amp;A
+How to add a Rucio RSE using a puppet StoRM and WebDav deployment with tokens based A&amp;A 
 
   * [Requirements](#requirements)
   * [Install StoRM Backend, StoRM Frontend and StoRM WebDav with puppet](#install-storm-backend--storm-frontend-and-storm-webdav-with-puppet)
