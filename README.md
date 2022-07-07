@@ -3,7 +3,7 @@ How to add a Rucio RSE using a puppet StoRM and WebDav deployment with tokens ba
 
   * [Requirements](#requirements)
   * [Install StoRM Backend, StoRM Frontend and StoRM WebDav with puppet](#install-storm-backend--storm-frontend-and-storm-webdav-with-puppet)
-  * [Configuring StoRM WebDav A&A](#configuring-storm-webdav-a-a)
+  * [Configuring StoRM WebDav A&A](#configuring-storm-webdav-aa)
   * [Details of the installation and parameters to connect](#details-of-the-installation-and-parameters-to-connect)
   * [Add a new RSE from RUCIO Admintrator console](#add-a-new-rse-from-rucio-admintrator-console)
 
