@@ -113,6 +113,16 @@ Then execute
 sh puppet.modules
 ```
 
+Add a CephFS storage mount point (or a folder that points out) for `/storage/dteam/disk/` with  10TB:
+
+```
+TBC
+```
+
+Add permissions for this folder and the storm user (same permissions mask of the root folder within `/storage/dteam/`).
+
+
+
 Create a file named setup.pp and include the next
 
 ```
