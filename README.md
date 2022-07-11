@@ -11,7 +11,7 @@ How to add a Rucio RSE using a puppet StoRM and WebDav deployment with tokens ba
 
 - VM or Container with CentOS7.
 - 4 GB RAM and 4 CPU cores.
-- 50 GB of SSD.
+- 50 GB of SSD or another storage technology connected.
 
 ## Install StoRM Backend, StoRM Frontend and StoRM WebDav with puppet
 
@@ -82,6 +82,8 @@ Install puppet
 ```
 yum install -y puppet
 ```
+
+*After install the application, exit from your session and login again to have puppet working*
 
 Create the next file called `puppet.modules.sh`
 
@@ -262,8 +264,18 @@ systemctl status storm-webdav
 Check that the WebDav service responds
 ```
 curl http://localhost:8085/actuator/health
-{"status":"UP"}
+{"status":"DOWN"}
 ```
+
+If you see `{"status":"DOWN"}`, check the logs to know what is going on:
+
+```
+cat /var/log/storm/webdav/storm-webdav-server.log
+```
+
+*Check error with REDIS server. By default REDIS is not isntalled anyway, so you have to install manually.*
+
+
 
 Get service metrics
 ```
