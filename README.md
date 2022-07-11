@@ -303,11 +303,21 @@ cat /var/log/storm/webdav/storm-webdav-server.log
 
 ## Configuring StoRM WebDav A&A
 
+
+
+*Before: stop the service*
+
+```
+systemctl start storm-webdav
+```
+
 The config is spread across three files
 
+```
 /etc/systemd/system/storm-webdav.service.d/storm-webdav.conf
 /etc/storm/webdav/config/application.yml
 /etc/storm/webdav/sa.d/[your storm name].properties
+```
 
 Edit an existing template `/etc/storm/webdav/sa.d/sa.properties.template` and save it as `storm-webdav-test-sa.properties`
 Remove all the directives and use the next:
