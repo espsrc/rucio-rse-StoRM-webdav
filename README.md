@@ -283,14 +283,16 @@ If you see `{"status":"DOWN"}`, check the logs to know what is going on:
 cat /var/log/storm/webdav/storm-webdav-server.log
 ```
 
-*Check error with REDIS server. By default REDIS is not isntalled anyway, so you have to install manually.*
-
+*By default REDIS is not isntalled anyway, so you have to install manually.*
 
 
 Get service metrics
 ```
 curl http://localhost:8085/status/metrics?pretty=true
 ```
+
+It will return: 
+
 ```
 {
   "version" : "4.0.0",
@@ -305,23 +307,17 @@ curl http://localhost:8085/status/metrics?pretty=true
 }
 ```
 
-Check logs of StoRM WebDav 
-
-```
-cat /var/log/storm/webdav/storm-webdav-server.log
-```
 
 ## Configuring StoRM WebDav A&A
-
 
 
 *Before: stop the service*
 
 ```
-systemctl start storm-webdav
+systemctl stop storm-webdav
 ```
 
-The config is spread across three files
+The config of StoRM-WebFav is spread across three files
 
 ```
 /etc/systemd/system/storm-webdav.service.d/storm-webdav.conf
@@ -367,8 +363,8 @@ security:
         escape:
             provider: escape
             client-name: ska-storm-webdav
-            client-id: <redacted>
-            client-secret: <redacted>
+            client-id: XXXXX
+            client-secret: YYYYYYY
             scope:
             - openid
             - profile
@@ -401,6 +397,169 @@ Again,  validate the status of the service if logs look good.
 
 curl http://spsr.local:8085/actuator/health
 curl http://spsr.local:8085/status/metrics?pretty=true 
+
+
+## Creating an identity 
+
+Go to this page: https://iam-escape.cloud.cnaf.infn.it/login and create your acount if you dont have one. Once you have this credentials, go to the next link:
+
+https://iam-escape.cloud.cnaf.infn.it/manage/dev/dynreg
+
+- Click on: `Developer` **>>** `Self-service client registration`
+- Then: `New Client`
+
+In this screen add the following within the "Main" Tab:
+- Client name: spsrc-rucio-storage
+- Redirect URI(s): Add http://localhost:47056, http://localhost:8080, http://localhost:4242 (one per line)
+
+Go to the tab "Access" and:
+- Select just: `openid`, `profile`, `email`, `offline_access`,`wlcg.groups`
+
+*Note: add the same items you have within the last configuration file under scope:*
+
+After that, click on `Save` button and you will see the following variables:
+
+Client ID: XXXXXX
+Client Secret: XXXXXX
+Client Configuration URL: XXXX
+Registration Access Token: XXXX 
+
+*Store these credentials in a safe place*
+
+### Updating A&A crendentials in StoRM-WebDav
+
+Modify this file /etc/storm/webdav/config/application.yml and complete `client-id:` and `client-secret:` with the client data that you get in the previous step:
+
+
+```
+....
+   provider: escape
+            client-name: <your clien name, here what we use: spsrc-rucio-storage>
+            client-id: <your client id>
+            client-secret: <your client id>
+            scope:
+....
+```
+
+Example:
+
+```
+....
+   provider: escape
+            client-name: spsrc-rucio-storage
+            client-id: 1234-1234-....
+            client-secret: zzzXXXXX
+            scope:
+....
+```
+
+
+### Adding IAM groups
+
+Go to https://iam-escape.cloud.cnaf.infn.it/dashboard#!/home and click on `Group request` >> `Join a group`. 
+
+Look for the next groups: `escape` and `escape/ska`
+
+Add these groups and confirm, and then check if both groups are set in the group section.
+
+### Running Rucio Client
+
+Start this container:
+
+*Change <iam_username> with your iam user previously created*
+
+```
+docker run --rm -it -e RUCIO_CFG_RUCIO_HOST=https://srcdev.skatelescope.org/rucio-dev -e RUCIO_CFG_AUTH_HOST=https://srcdev.skatelescope.org/rucio-dev -e RUCIO_CFG_AUTH_TYPE=oidc -e RUCIO_CFG_ACCOUNT=<iam_username> --name=ska-rucio-client registry.gitlab.com/ska-telescope/src/ska-rucio-client:release-1.28.0
+```
+
+Once inside, 
+
+Verify the `/opt/rucio/etc/rucio.cfg`  snippet:
+
+*Note: change <iam_username> to your user*
+
+```
+[client]
+rucio_host = https://srcdev.skatelescope.org/rucio-dev
+auth_host = https://srcdev.skatelescope.org/rucio-dev
+ca_cert =
+auth_type = oidc
+username =
+password =
+account = <iam_username>
+request_retries = 3
+oidc_scope = openid profile wlcg.groups rucio fts fts:submit-transfer
+oidc_audience = fts https://wlcg.cern.ch/jwt/v1/an
+```
+
+Then type:
+
+
+```
+rucio ping
+```
+
+or
+
+```
+rucio whoami
+```
+
+Upon running a rucio command you will be get a browser link to click on, click on this link which will ask you to authenticate with ESCAPE IAM and provide you with an authorization code. Enter this code in your command line terminal to complete authentication. This token is for 1 hour!.
+
+You can export the token to an environment variable 
+
+```
+export TOKEN=`cat /tmp/user/.rucio_user/auth_token_for_account_<iam_username>`
+```
+
+Example:
+
+```
+export TOKEN=`cat /tmp/user/.rucio_user/auth_token_for_account_mparra`
+```
+
+### Testing local RSE
+
+
+Install EPEL repository within this container and davix client:
+```
+yum install epel-release && yum update -y
+yum install davix
+```
+
+List files:
+
+```
+davix-ls -l -H "Authorization: Bearer $TOKEN" https://<hostname>:<port>/<path>
+```
+
+Example:
+
+```
+davix-ls -l -H "Authorization: Bearer $TOKEN" https://spsrc14.iaa.csic.es:18026/disk/
+```
+### Test TPT (third part transfers)
+
+
+Two options: 
+- Install FTS client: To access the FTS REST CLI, run a container from the image ``gitlab-registry.cern.ch/fts/fts-rest:latest``.
+- Install the CLI tools with `yum install fts-rest-cli`: yum install fts-client
+
+And then run:
+
+```
+fts-rest-whoami -s https://fts3-pilot.cern.ch:8446 --access-token=`$TOKEN -s openid -s offline_access -s profile -s wlcg.groups
+```
+
+Check third party transfers:
+
+```
+fts-rest-transfer-submit --access-token=${TOKEN} -s https://fts3-pilot.cern.ch:8446/ <src> <dest>
+```
+
+Add `—insecure` flag if having trouble with certificates at `/etc/grid-security/certificates`
+
 
 
 ## Details of the installation and parameters to connect
