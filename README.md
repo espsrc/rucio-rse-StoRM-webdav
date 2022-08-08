@@ -28,6 +28,53 @@ How to add a Rucio RSE using a puppet StoRM and WebDav deployment with OIDC A&am
 
 ## Install StoRM Backend, StoRM Frontend and StoRM WebDav with puppet
 
+### Setup CephFS storage folder
+
+Enable shared storage with CephFS in `/storage/` and mount it with the `acl` and `user_xattr` options. 
+To enable them, you must first install support for `acl` and `xattr`. Install this two tools related with the StoRM backend and FileSystem management: 
+```
+yum install acl
+yum install attr
+```
+
+Type the next to confirm that you have enabled the `acl` support:
+
+```
+touch test
+setfacl -m u:storm:rw test
+```
+
+Now we are test the same with xattr:
+
+```
+touch testfile
+setfattr -n user.testea -v test testfile
+getfattr -d testfile
+```
+
+Then add you CephFS to the VM with the attributes of acl, and user_xattr
+
+```
+mount -t ceph <IP_1>:6789,<IP_2>:6789,<IP_3>:6789:/volumes/_nogroup/12581a31-7af3-4451-8fe8-e54f5409d293 /storage/dteam/disk -o secretfile=/etc/ceph/ceph.client.storage-rucio.secret,name=user-rucio,acl,user_xattr
+```
+
+If you are using a block storage from Ceph instead CephFS, use the following to configure the extended FileSystem configuration:
+
+Add `acl` to `fstab` to support to the folder where you have your storage (after it, remount it)
+
+```
+/dev/hda3     /storage      ext4     defaults, acl     0 0 
+```
+
+and then add  `user_xattr` to `fstab` to support to the folder where you have your storage (after it, remount it)
+
+
+```
+/dev/hda3     /storage     ext4     defaults,acl,user_xattr     0 0 
+```
+
+
+
 ### Initial configuration
 
 Install wget
@@ -71,40 +118,7 @@ chmod 644 /etc/grid-security/hostcert.pem
 chmod 400 /etc/grid-security/hostkey.pem
 ```
 
-Install two tools related with the StoRM backend and FileSystem management
-```
-yum install acl
-yum install attr
-```
 
-Type the next to confirm that you have enabled the `acl` support:
-
-```
-touch test
-setfacl -m u:storm:rw test
-```
-
-and then add `acl` to `fstab` to support to the folder where you have your storage (after it, remount it)
-
-
-```
-/dev/hda3     /storage      ext4     defaults, acl     0 0 
-```
-
-Now we are test the same with xattr:
-
-```
-touch testfile
-setfattr -n user.testea -v test testfile
-getfattr -d testfile
-```
-
-and then add  `user_xattr` to `fstab` to support to the folder where you have your storage (after it, remount it)
-
-
-```
-/dev/hda3     /storage     ext4     defaults,acl,user_xattr     0 0 
-```
 
 ### Installing repos, puppet and StoRM services
 
