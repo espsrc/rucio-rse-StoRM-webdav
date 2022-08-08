@@ -1,5 +1,6 @@
-# Rucio RSE based on StoRM-webdav with Token based Auth
-How to add a Rucio RSE using a puppet StoRM and WebDav deployment with tokens based A&amp;A 
+# Rucio RSE based on StoRM-webdav with OIDC token Authentication and CephFS as Storage plaform
+
+How to add a Rucio RSE using a puppet StoRM and WebDav deployment with OIDC A&amp;A tokens. 
 
   * [Requirements](#requirements)
   * [Install StoRM Backend, StoRM Frontend and StoRM WebDav with puppet](#install-storm-backend--storm-frontend-and-storm-webdav-with-puppet)
@@ -9,12 +10,14 @@ How to add a Rucio RSE using a puppet StoRM and WebDav deployment with tokens ba
 
 ## Requirements
 
-- VM or Container with CentOS7.
+- VM or container with CentOS7.
 - 4 GB RAM and 4 CPU cores.
 - 50 GB of SSD or another storage technology connected.
+- In this case we are going to add a CephFS connected to this VM, so a CephFS folder is required.
 
 ## Install StoRM Backend, StoRM Frontend and StoRM WebDav with puppet
 
+### Initial configuration
 
 Install wget
 ```
@@ -38,8 +41,7 @@ Install OpenSSL to create self-signed certificates
 yum install openssl
 ```
 
-Create our x509 certificate
-
+Create our own x509 certificate.
 ```
 openssl req -newkey rsa:2048 -new -nodes -x509 -days 3650 -keyout key.pem -out cert.pem
 ```
@@ -63,6 +65,37 @@ Install two tools related with the StoRM backend and FileSystem management
 yum install acl
 yum install attr
 ```
+
+Type the next to confirm that you have enabled the `acl` support:
+
+```
+touch test
+setfacl -m u:storm:rw test
+```
+
+and then add `acl` to `fstab` to support to the folder where you have your storage (after it, remount it)
+
+
+```
+/dev/hda3     /storage      ext4     defaults, acl     0 0 
+```
+
+Now we are test the same with xattr:
+
+```
+touch testfile
+setfattr -n user.testea -v test testfile
+getfattr -d testfile
+```
+
+and then add  `user_xattr` to `fstab` to support to the folder where you have your storage (after it, remount it)
+
+
+```
+/dev/hda3     /storage     ext4     defaults,acl,user_xattr     0 0 
+```
+
+### Installing repos, puppet and StoRM services
 
 Time to install all the repositories for StoRM core environment
 
@@ -120,8 +153,6 @@ TBC
 ```
 
 Add permissions for this folder and the storm user (same permissions mask of the root folder within `/storage/dteam/`).
-
-
 
 Create a file named setup.pp and include the next
 
@@ -258,7 +289,7 @@ class { 'storm::webdav':
 }
 ```
 
-Apply it with 
+Apply it with:
 
 
 ```
@@ -283,7 +314,8 @@ If you see `{"status":"DOWN"}`, check the logs to know what is going on:
 cat /var/log/storm/webdav/storm-webdav-server.log
 ```
 
-*By default REDIS is not isntalled anyway, so you have to install manually.*
+*By default REDIS is not installed anyway, so you have to install manually.*
+
 
 
 Get service metrics
@@ -348,31 +380,31 @@ Now is time to edit the following file /etc/storm/webdav/config/application.yml 
 
 ```
 oauth:
-enable-oidc: true
-issuers:
+  enable-oidc: true
+  issuers:
     - name: escape
-    issuer: https://iam-escape.cloud.cnaf.infn.it/
+      issuer: https://iam-escape.cloud.cnaf.infn.it/
 spring:
-security:
+  security:
     oauth2:
-    client:
+      client:
         provider:
-        escape:
-            issuer-uri: https://iam-escape.cloud.cnaf.infn.it/
+          escape:
+            issuer-uri: https://iam-escape.cloud.cnaf.infn.it/ 
         registration:
-        escape:
+          escape:
             provider: escape
             client-name: ska-storm-webdav
-            client-id: XXXXX
-            client-secret: YYYYYYY
+            client-id: <redacted>
+            client-secret: <redacted>
             scope:
-            - openid
-            - profile
-            - wlcg.groups
+              - openid
+              - profile
+              - wlcg.groups
 storm:
-voms:
+  voms:
     trust-store:
-    dir: ${STORM_WEBDAV_VOMS_TRUST_STORE_DIR:/etc/grid-security/certificates}
+      dir: ${STORM_WEBDAV_VOMS_TRUST_STORE_DIR:/etc/grid-security/certificates}
 ```
 
 Restart the StoRM WebDav
@@ -397,6 +429,24 @@ Again,  validate the status of the service if logs look good.
 
 curl http://spsr.local:8085/actuator/health
 curl http://spsr.local:8085/status/metrics?pretty=true 
+
+## Create SSL certificates for HTTPS WebDav service
+
+In order to make transfers from RUCIO it is necessary to provide valid SSL certificates signed by a trusted authority. For this we can use LetsEncript or our root certificate.
+
+Once the certificates are obtained, they must be copied into the WebDAV directories for the web service:
+
+```
+/etc/grid-security/storm-webdav/hostkey.pem
+/etc/grid-security/storm-webdav/hostcert.pem 
+```
+
+Then restart the WebDAV service:
+
+```
+systemctl stop storm-webdav
+systemctl start storm-webdav
+```
 
 
 ## Creating an identity 
@@ -541,10 +591,9 @@ davix-ls -l -H "Authorization: Bearer $TOKEN" https://spsrc14.iaa.csic.es:18026/
 ```
 ### Test TPT (third part transfers)
 
-
 Two options: 
 - Install FTS client: To access the FTS REST CLI, run a container from the image ``gitlab-registry.cern.ch/fts/fts-rest:latest``.
-- Install the CLI tools with `yum install fts-rest-cli`: yum install fts-client
+- Install the CLI tools with `yum install fts-rest-cli` and `yum install fts-client`
 
 And then run:
 
