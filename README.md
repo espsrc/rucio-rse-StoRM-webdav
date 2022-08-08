@@ -17,7 +17,7 @@ How to add a Rucio RSE using a puppet StoRM and WebDav deployment with OIDC A&am
     + [Testing local RSE](#testing-local-rse)
     + [Test TPT (third part transfers)](#test-tpt--third-part-transfers-)
   * [Details of the installation and parameters to connect](#details-of-the-installation-and-parameters-to-connect)
-  * [Add a new RSE from RUCIO Admintrator console](#add-a-new-rse-from-rucio-admintrator-console)
+  * [Add a new RSE from RUCIO Administrator console](#add-a-new-rse-from-rucio-administrator-console)
 - [References](#references)
 
 
@@ -643,7 +643,7 @@ Add `--insecure` flag if having trouble with certificates at `/etc/grid-security
 By default a storage area named `dteam-disk` is accessible at the URL https://spsrc-local:8443/dteam-disk or, if anonymous access is granted, at https://dteam-disk:8085/dteam-disk
 
 
-## Add a new RSE from RUCIO Admintrator console
+## Add a new RSE from RUCIO Administrator console
 
 Add a deterministic RSE for our SPSRC
 
