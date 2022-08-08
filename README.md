@@ -4,9 +4,20 @@ How to add a Rucio RSE using a puppet StoRM and WebDav deployment with OIDC A&am
 
   * [Requirements](#requirements)
   * [Install StoRM Backend, StoRM Frontend and StoRM WebDav with puppet](#install-storm-backend--storm-frontend-and-storm-webdav-with-puppet)
-  * [Configuring StoRM WebDav A&A](#configuring-storm-webdav-aa)
+    + [Initial configuration](#initial-configuration)
+    + [Installing repos, puppet and StoRM services](#installing-repos--puppet-and-storm-services)
+  * [Configuring StoRM WebDav A&A](#configuring-storm-webdav-a-a)
+  * [Create SSL certificates for HTTPS WebDav service](#create-ssl-certificates-for-https-webdav-service)
+  * [Creating an identity](#creating-an-identity)
+    + [Updating A&A crendentials in StoRM-WebDav](#updating-a-a-crendentials-in-storm-webdav)
+    + [Adding IAM groups](#adding-iam-groups)
+    + [Running Rucio Client](#running-rucio-client)
+    + [Testing local RSE](#testing-local-rse)
+    + [Test TPT (third part transfers)](#test-tpt--third-part-transfers-)
   * [Details of the installation and parameters to connect](#details-of-the-installation-and-parameters-to-connect)
   * [Add a new RSE from RUCIO Admintrator console](#add-a-new-rse-from-rucio-admintrator-console)
+- [References](#references)
+
 
 ## Requirements
 
@@ -607,13 +618,13 @@ Check third party transfers:
 fts-rest-transfer-submit --access-token=${TOKEN} -s https://fts3-pilot.cern.ch:8446/ <src> <dest>
 ```
 
-Add `—insecure` flag if having trouble with certificates at `/etc/grid-security/certificates`
+Add `--insecure` flag if having trouble with certificates at `/etc/grid-security/certificates`
 
 
 
 ## Details of the installation and parameters to connect
 
-By default a storage area named `dteam-disk` is accessible at the URL https://spsrc-local:8443/dteam-disk or, if anonymous access is granted, at http://dteam-disk:8085/dteam-disk
+By default a storage area named `dteam-disk` is accessible at the URL https://spsrc-local:8443/dteam-disk or, if anonymous access is granted, at https://dteam-disk:8085/dteam-disk
 
 
 ## Add a new RSE from RUCIO Admintrator console
