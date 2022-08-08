@@ -2,8 +2,10 @@
 
 How to add a Rucio RSE using a puppet StoRM and WebDav deployment with OIDC A&amp;A tokens. 
 
+
   * [Requirements](#requirements)
   * [Install StoRM Backend, StoRM Frontend and StoRM WebDav with puppet](#install-storm-backend--storm-frontend-and-storm-webdav-with-puppet)
+    + [Setup CephFS storage folder](#setup-cephfs-storage-folder)
     + [Initial configuration](#initial-configuration)
     + [Installing repos, puppet and StoRM services](#installing-repos--puppet-and-storm-services)
   * [Configuring StoRM WebDav A&A](#configuring-storm-webdav-a-a)
